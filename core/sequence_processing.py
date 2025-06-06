@@ -11,15 +11,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 class SequenceProcessingError(Exception):
-    """Custom exception for sequence processing errors."""
     pass
 
 
 def load_clustalw_path_from_config(config_path: str = "config.json") -> str:
-    """
-    Load the ClustalW executable path from a JSON config file.
-    Raises SequenceProcessingError if the config or path is invalid.
-    """
     if not os.path.exists(config_path):
         raise SequenceProcessingError(f"Config file '{config_path}' not found.")
 
@@ -34,23 +29,22 @@ def load_clustalw_path_from_config(config_path: str = "config.json") -> str:
 
 
 def create_fasta_from_sequences(sequences, output_filepath: str, align: bool = True) -> str:
-    """
-    Create a FASTA file from a list of SequenceData objects, with optional ClustalW alignment.
-
-    Parameters:
-        sequences: List of SequenceData objects.
-        output_filepath: Final FASTA output file path.
-        align: Whether to align sequences using ClustalW.
-
-    Returns:
-        Path to the created FASTA file (aligned if `align` is True).
-    """
     if not sequences:
         raise SequenceProcessingError("No sequences provided to create FASTA file.")
 
     fasta_records = []
-    for seq_data in sequences:
-        fasta_id = f"{seq_data.organism_name.replace(' ', '_')}_{seq_data.marker_code}_{seq_data.processid}"
+    seen_ids = set()
+    for i, seq_data in enumerate(sequences):
+        query_label = seq_data.query_name.replace(" ", "_")
+        base_id = f"{query_label}_{seq_data.marker_code}_{seq_data.processid}"
+        fasta_id = base_id
+
+        suffix = 1
+        while fasta_id in seen_ids:
+            fasta_id = f"{base_id}_{suffix}"
+            suffix += 1
+        seen_ids.add(fasta_id)
+
         clean_sequence = "".join(filter(str.isalpha, seq_data.sequence.upper()))
         if not clean_sequence:
             logger.warning(f"Skipping empty or invalid sequence for ID {seq_data.processid}")
@@ -63,6 +57,7 @@ def create_fasta_from_sequences(sequences, output_filepath: str, align: bool = T
             description=f"{seq_data.organism_name} | {seq_data.marker_code} | BOLD ProcessID:{seq_data.processid}"
         )
         fasta_records.append(record)
+
 
     if not fasta_records:
         raise SequenceProcessingError("All sequences were invalid or empty.")

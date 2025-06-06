@@ -1,0 +1,7 @@
+echo "__pycache__/
+*.pyc
+*.log
+*.aln
+*.dnd
+data/temp_fasta/
+" > .gitignore

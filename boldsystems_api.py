@@ -7,23 +7,24 @@ from Bio import SeqIO
 
 from core.sequence_processing import create_fasta_from_sequences, SequenceProcessingError
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 class BOLDAPIError(Exception):
     pass
 
 class SequenceData:
-    def __init__(self, processid, organism_name, marker_code, sequence):
+    def __init__(self, processid, organism_name, marker_code, sequence, query_name):
         self.processid = processid
         self.organism_name = organism_name
         self.marker_code = marker_code
         self.sequence = sequence
+        self.query_name = query_name
 
     def __repr__(self):
         return (f"SequenceData(processid='{self.processid}', "
                 f"organism='{self.organism_name}', "
                 f"marker='{self.marker_code}', "
+                f"query_name='{self.query_name}', "
                 f"sequence='{self.sequence[:30]}...')")
 
 BOLD_API_URL = "http://www.boldsystems.org/index.php/API_Public"
@@ -64,7 +65,8 @@ def fetch_sequences_by_organism_and_marker(organism: str, marker_code: str, limi
                     processid=processid,
                     organism_name=organism_name,
                     marker_code=marker_code_found,
-                    sequence=str(record.seq)
+                    sequence=str(record.seq),
+                    query_name=organism
                 )
             )
     except Exception as e:
